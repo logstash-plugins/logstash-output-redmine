@@ -9,7 +9,7 @@ require "logstash/namespace"
 #
 #
 # -- Exemple of use --
-#  
+# [source,ruby]
 #  output {
 #    redmine {
 #      url => "http://redmineserver.tld"
