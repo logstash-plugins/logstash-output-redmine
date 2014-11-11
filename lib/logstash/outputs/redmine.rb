@@ -1,8 +1,9 @@
 # encoding: utf-8
 require "logstash/outputs/base"
 require "logstash/namespace"
+require "logstash/json"
 
-# The redmine output is used to create a ticket via the API redmine. 
+# The redmine output is used to create a ticket via the API redmine.
 #
 # It send a POST request in a JSON format and use TOKEN authentication
 # This output provide ssl connection method but does not check the certificate
@@ -35,32 +36,32 @@ class LogStash::Outputs::Redmine < LogStash::Outputs::Base
 
   # http request ssl trigger
   # not required
-  config :ssl, :validate => :boolean, :default => false 
+  config :ssl, :validate => :boolean, :default => false
 
   # redmine token user used for authentication
   # required
   config :token, :validate => :string, :required => true
 
-  # redmine issue projet_id 
-  # required 
+  # redmine issue projet_id
+  # required
   config :project_id, :validate => :number, :required => true
 
   # redmine issue tracker_id
-  # required 
+  # required
   config :tracker_id, :validate => :number, :required => true
 
   # redmine issue status_id
-  # required 
-  config :status_id, :validate => :number, :required => true 
+  # required
+  config :status_id, :validate => :number, :required => true
 
   # redmine issue priority_id
-  # required 
+  # required
   config :priority_id, :validate => :number, :required => true
 
   # redmine issue subject
-  # required 
+  # required
   config :subject, :validate => :string, :default => "%{host}"
-          
+
   # redmine issue description
   # required
   config :description, :validate => :string, :default => "%{message}"
@@ -68,7 +69,7 @@ class LogStash::Outputs::Redmine < LogStash::Outputs::Base
   # redmine issue assigned_to
   # not required for post_issue
   config :assigned_to_id, :validate => :number, :default => nil
-  
+
   # redmine issue parent_issue_id
   # not required for post_issue
   config :parent_issue_id, :validate => :number, :default => nil
@@ -85,27 +86,27 @@ class LogStash::Outputs::Redmine < LogStash::Outputs::Base
   def register
 
     require 'net/http'
-    require 'uri'   
+    require 'uri'
 
     # url form
     # TODO : Add a mecanism that verify and format this value
     @post_format = 'json'
     @formated_url = "#{@url}/issues.#{@post_format}"
     @uri = URI(@formated_url)
-    @logger.debug("formated_uri:",:uri => @formated_url) 
-  
+    @logger.debug("formated_uri:",:uri => @formated_url)
+
     #http prepare
     @http = Net::HTTP.new(@uri.host, @uri.port)
-    @header = { 'Content-Type' => 'application/json', 'X-Redmine-Api-Key' => "#{@token}" } 
+    @header = { 'Content-Type' => 'application/json', 'X-Redmine-Api-Key' => "#{@token}" }
     @req = Net::HTTP::Post.new(@uri.path, @header)
     @logger.debug("request instancied with:", :uri_path => @uri.path, :header => @header )
-    
+
     #ssl verify
-    if @ssl == true 
+    if @ssl == true
       @logger.info("ssl use detected", :ssl => @ssl)
       @http.use_ssl = true
       # disable ssl certificate verification
-      @http.verify_mode = OpenSSL::SSL::VERIFY_NONE 
+      @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
     end
 
   end # def register
@@ -114,13 +115,13 @@ class LogStash::Outputs::Redmine < LogStash::Outputs::Base
   def receive(event)
 
     return unless output?(event)
-    
+
     if event == LogStash::SHUTDOWN
       finished
       return
     end
 
-    # interpolate parameters 
+    # interpolate parameters
     description = event.sprintf(@description)
     subject = event.sprintf(@subject)
 
@@ -134,20 +135,20 @@ class LogStash::Outputs::Redmine < LogStash::Outputs::Base
                      "subject" => "#{subject}",
                      "description" => "#{description}"
                      }
-             } 
+             }
 
     # Add "not required" issue parameters in the issue hash
     @issue["issue"]["assigned_to_id"] = "#{@assigned_to_id}" if not @assigned_to_id.nil?
-    @issue["issue"]["parent_issue_id"] = "#{@parent_issue_id}" if not @parent_issue_id.nil?    
+    @issue["issue"]["parent_issue_id"] = "#{@parent_issue_id}" if not @parent_issue_id.nil?
     @issue["issue"]["category_id"] = "#{@category_id}" if not @category_id.nil?
     @issue["issue"]["fixed_version_id"] = "#{@fixed_version_id}" if not @fixed_version_id.nil?
 
     # change hash issue to json for the request
-    @req.body = @issue.to_json
-    
-    # send the post_http_request "req" 
+    @req.body = LogStash::Json.dump(@issue)
+
+    # send the post_http_request "req"
     @logger.info("Sending request to redmine :", :host => @formated_url, :body => @req.body)
-    begin 
+    begin
       @http.request(@req)
     rescue => e
       @logger.warn("Skipping redmine output; error during request post", "error" => $!, "missed_event" => event)
