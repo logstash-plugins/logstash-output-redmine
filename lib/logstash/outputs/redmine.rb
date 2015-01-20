@@ -26,7 +26,6 @@ require "logstash/namespace"
 class LogStash::Outputs::Redmine < LogStash::Outputs::Base
 
   config_name "redmine"
-  milestone 1
 
   # host of redmine app
   # required
