@@ -115,10 +115,7 @@ class LogStash::Outputs::Redmine < LogStash::Outputs::Base
 
     return unless output?(event)
 
-    if event == LogStash::SHUTDOWN
-      finished
-      return
-    end
+    return if event == LogStash::SHUTDOWN
 
     # interpolate parameters
     description = event.sprintf(@description)
