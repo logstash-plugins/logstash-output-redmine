@@ -113,7 +113,7 @@ class LogStash::Outputs::Redmine < LogStash::Outputs::Base
   public
   def receive(event)
 
-    return unless output?(event)
+    
 
     return if event == LogStash::SHUTDOWN
 
