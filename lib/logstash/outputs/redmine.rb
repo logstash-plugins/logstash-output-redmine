@@ -112,9 +112,6 @@ class LogStash::Outputs::Redmine < LogStash::Outputs::Base
 
   public
   def receive(event)
-
-    
-
     return if event == LogStash::SHUTDOWN
 
     # interpolate parameters
