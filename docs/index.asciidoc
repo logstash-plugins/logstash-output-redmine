@@ -14,7 +14,7 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 [id="plugins-{type}-{plugin}"]
 
-=== Redmine
+=== Redmine output plugin
 
 include::{include_path}/plugin_header.asciidoc[]
 
